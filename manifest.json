@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.avillagran.omarchy-animated-backgrounds",
+  "name": "Animated & Parallax Backgrounds",
+  "version": "0.1.0",
+  "author": "avillagran",
+  "description": "Mouse-parallax multi-source backgrounds (image, video, animated, layered parallax scenes) with a live background switcher. Plugin edition of the omarchy parallax-background PR — try it without patching the shell.",
+  "kinds": [
+    "service"
+  ],
+  "entryPoints": {
+    "service": "Service.qml"
+  }
+}

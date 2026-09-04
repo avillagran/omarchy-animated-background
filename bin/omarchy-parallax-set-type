@@ -1,0 +1,120 @@
+#!/bin/bash
+#
+# omarchy-parallax-set-type — plugin edition of omarchy-bg-set-type.
+# Writes the multi-source background state and notifies THIS plugin's
+# renderer over IPC (target = the plugin id, never the first-party
+# `background` target).
+#
+# Usage: omarchy-parallax-set-type <image|video|audio|animated> [path]
+
+set -e
+
+IPC_TARGET="io.github.avillagran.omarchy-animated-backgrounds"
+
+TYPE="$1"
+PATH_ARG="$2"
+
+if [[ -z "$TYPE" ]]; then
+  echo "Usage: omarchy-parallax-set-type <image|video|audio|animated> [path]" >&2
+  exit 1
+fi
+
+STATE_DIR="$HOME/.local/state/omarchy/current"
+mkdir -p "$STATE_DIR"
+
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+ANIM2MP4="$(command -v omarchy-bg-anim2mp4 || true)"
+[[ -z "$ANIM2MP4" && -x "$SCRIPT_DIR/omarchy-bg-anim2mp4" ]] && ANIM2MP4="$SCRIPT_DIR/omarchy-bg-anim2mp4"
+
+# Keep the canonical `background` symlink pointing at real media (or its best
+# raster) so bar-text-color / lock screen sample the actual wallpaper. Videos
+# are thumbnailed by omarchy-bar-text-color itself; scene dirs use poster.jpg.
+sync_bar_symlink() {
+  local src="$1" target=""
+  case "$src" in
+    *.mp4|*.mkv|*.mov|*.webm|*.avi)
+      target="$src"
+      ;;
+    *)
+      if [[ -d "$src" && -f "$src/poster.jpg" ]]; then
+        target="$src/poster.jpg"
+      else
+        target="$src"
+      fi
+      ;;
+  esac
+  [[ -f "$target" ]] && ln -nsf "$(realpath "$target")" "$STATE_DIR/background" || true
+}
+
+case "$TYPE" in
+  image|video|audio|animated)
+    echo "$TYPE" > "$STATE_DIR/bg-source-type"
+    ;;
+  *)
+    echo "Unknown type: $TYPE (image|video|audio|animated)" >&2
+    exit 1
+    ;;
+esac
+
+# If a path was provided, set it as the source
+if [[ -n "$PATH_ARG" ]]; then
+  case "$TYPE" in
+    image)
+      echo "$PATH_ARG" > "$STATE_DIR/bg-source-path"
+      # Keep the canonical symlink in sync (bar color, lock screen) but apply
+      # through setSource so the live QML switches its source TYPE too — the
+      # plain IPC `set` would keep the old type in memory (e.g. audio).
+      ln -nsf "$(realpath "$PATH_ARG")" "$STATE_DIR/background"
+      omarchy-shell -q "$IPC_TARGET" setSource image "$PATH_ARG" 2>/dev/null || true
+      ;;
+    video)
+      # For video, write the path directly
+      echo "$PATH_ARG" > "$STATE_DIR/bg-source-path"
+      sync_bar_symlink "$PATH_ARG"
+      omarchy-shell -q "$IPC_TARGET" setSource "$TYPE" "$PATH_ARG" 2>/dev/null || true
+      ;;
+    animated)
+      # Parallax background: a directory with layers/0-*.svg — the QML
+      # stacks the layers and drives the depth drift; nothing to convert.
+      if [[ -d "$PATH_ARG/layers" ]]; then
+        echo "$PATH_ARG" > "$STATE_DIR/bg-source-path"
+        sync_bar_symlink "$PATH_ARG"
+        omarchy-shell -q "$IPC_TARGET" setSource "$TYPE" "$PATH_ARG" 2>/dev/null || true
+      else
+      # Animated images become a cached looping mp4 for real playback; static
+      # SVG artwork becomes a screen-width raster (QtSvg drops nested-svg art)
+      # and the QML adds mouse parallax on top.
+      GENERATED=$("$ANIM2MP4" "$PATH_ARG" 2>/dev/null || true)
+      if [[ -n "$GENERATED" && -f "$GENERATED" ]]; then
+        echo "$GENERATED" > "$STATE_DIR/bg-source-path"
+        sync_bar_symlink "$GENERATED"
+        omarchy-shell -q "$IPC_TARGET" setSource "$TYPE" "$GENERATED" 2>/dev/null || true
+      else
+        echo "$PATH_ARG" > "$STATE_DIR/bg-source-path"
+        sync_bar_symlink "$PATH_ARG"
+        omarchy-shell -q "$IPC_TARGET" setSource "$TYPE" "$PATH_ARG" 2>/dev/null || true
+      fi
+      fi
+      ;;
+    audio)
+      # For audio, the path is the ttfx effect name
+      echo "$PATH_ARG" > "$STATE_DIR/bg-source-path"
+      # The ttfx wrapper reads its effect from the plugin state.json — sync it
+      # so the chosen effect is the one that actually renders, and turn the
+      # renderer ON (the user may have toggled the background off; applying
+      # from the switcher must bring it back).
+      WRITE_STATE="$HOME/.config/omarchy/plugins/io.github.avillagran.omarchy-audio-background/bin/write_state.sh"
+      [[ -x "$WRITE_STATE" ]] && "$WRITE_STATE" "effect=$PATH_ARG" "running=1" >/dev/null 2>&1 || true
+      omarchy-shell -q "$IPC_TARGET" setSource "$TYPE" "$PATH_ARG" 2>/dev/null || true
+      ;;
+  esac
+  # Leaving ascii/audio: turn the ttfx renderer off so it doesn't draw over
+  # the new background if its process gets relaunched.
+  if [[ "$TYPE" != "audio" ]]; then
+    WRITE_STATE="$HOME/.config/omarchy/plugins/io.github.avillagran.omarchy-audio-background/bin/write_state.sh"
+    [[ -x "$WRITE_STATE" ]] && "$WRITE_STATE" "running=0" >/dev/null 2>&1 || true
+  fi
+else
+  # Just switch type, trigger refresh
+  omarchy-shell -q "$IPC_TARGET" refresh 2>/dev/null || true
+fi
