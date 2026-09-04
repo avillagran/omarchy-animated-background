@@ -52,6 +52,11 @@ omarchy-shell -q io.github.avillagran.omarchy-animated-backgrounds toggle
 
 ## Where your content goes
 
+> **Just want to try it?** Grab the
+> [sample wallpapers pack](https://github.com/avillagran/omarchy-animated-backgrounds/releases/tag/samplepack-v1)
+> (11 videos + 2 parallax scenes) and unzip it into your home directory —
+> the switcher picks the files up live.
+
 ```
 ~/Wallpapers/Images/    still images (jpg/png/webp/bmp; theme wallpapers also listed)
 ~/Wallpapers/Videos/    videos (mp4/mkv/mov/webm/avi)

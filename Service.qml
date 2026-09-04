@@ -55,5 +55,16 @@ Item {
     function transition(fromPath: string, path: string): void {
       renderer.transitionSource(fromPath, path, path, false, false)
     }
+    function state(): string {
+      return JSON.stringify({
+        pluginDir: root.pluginDir,
+        switcherPluginDir: switcher.pluginDir,
+        opened: switcher.opened,
+        itemsLoaded: switcher.itemsLoaded,
+        items: switcher.currentItems.length,
+        category: switcher.categoryIndex,
+        res: switcher.parallaxResolution
+      })
+    }
   }
 }
