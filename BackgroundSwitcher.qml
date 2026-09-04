@@ -184,7 +184,7 @@ Item {
     root.categoryIndex = idx
     root.selectedIndex = 0
     const cat = root.categories[idx].id
-    listProc.command = ["bash", root.scriptPath("list.sh"), cat]
+    listProc.command = ["bash", root.scriptPath("bin/list.sh"), cat]
     listProc.running = true
   }
 
@@ -214,7 +214,7 @@ Item {
     onTriggered: {
       const cat = root.categories[root.pendingCategory].id
       root.silentListReload = true
-      listProc.command = ["bash", root.scriptPath("list.sh"), cat]
+      listProc.command = ["bash", root.scriptPath("bin/list.sh"), cat]
       listProc.running = true
       root.selectedIndex = 0
       root.categoryIndex = root.pendingCategory
