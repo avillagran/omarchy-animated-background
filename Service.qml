@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Io
 import QtQuick
 
 // Self-contained animated/parallax background system for stock Omarchy:
