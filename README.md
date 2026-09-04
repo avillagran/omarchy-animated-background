@@ -73,6 +73,20 @@ Or from a terminal:
 omarchy-shell -q io.github.avillagran.omarchy-animated-backgrounds toggle
 ```
 
+### Companion plugin (for ASCII/audio backgrounds)
+
+The ASCII/AUDIO category works out of the box (listings, posters, live
+previews of the natively-rendered effects). To also **run** ASCII/audio
+effects as real desktop backgrounds — and get live previews of the full
+effect set — install the companion plugin:
+
+```sh
+omarchy plugin add https://github.com/avillagran/omarchy-audio-background --enable --yes
+```
+
+Without it, applying an ASCII effect leaves a transparent background (your
+previous wallpaper shows through) instead of the effect.
+
 ## Where your content goes
 
 > **Just want to try it?** Grab the
