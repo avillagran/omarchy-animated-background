@@ -32,13 +32,23 @@ switcher with live previews.
 ## Install
 
 ```sh
+# 1. Plugin (classic install: clone + enable)
 omarchy plugin add https://github.com/avillagran/omarchy-animated-backgrounds --enable --yes
-omarchy-shell shell rescanPlugins
-omarchy-restart-shell
+
+# 2. Sample content — 11 videos + 2 ready-made parallax scenes
+#    (skip if you already have your own ~/Wallpapers content)
+curl -sL -o /tmp/omarchy-wallpapers.zip \
+  https://github.com/avillagran/omarchy-animated-backgrounds/releases/download/samplepack-v1/omarchy-wallpapers-samplepack.zip \
+  && unzip -qo /tmp/omarchy-wallpapers.zip -d /tmp \
+  && cp -r /tmp/omarchy-wallpapers-samplepack/Wallpapers ~/ \
+  && rm -rf /tmp/omarchy-wallpapers.zip /tmp/omarchy-wallpapers-samplepack
+
+# 3. Open the switcher once (or bind it — see below)
+omarchy-shell io.github.avillagran.omarchy-animated-backgrounds toggle
 ```
 
-Then bind a key to open the switcher, e.g. in your Hyprland user config
-(`~/.config/hyprland/binds.conf` or the file your config includes):
+Add a keybind to open/close the switcher (e.g. in your Hyprland user
+config / sensei binds):
 
 ```
 bind = SUPER, B, exec, omarchy-shell -q io.github.avillagran.omarchy-animated-backgrounds toggle
