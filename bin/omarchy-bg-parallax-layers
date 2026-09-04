@@ -1,0 +1,81 @@
+#!/bin/bash
+# List the parallax layers of a background directory as JSON.
+#
+# Usage: omarchy-bg-parallax-layers <background-dir>
+#
+# Expects: <dir>/layers/0-*.svg 1-*.svg ... (numeric prefix = back -> front)
+# Optional <dir>/parallax.json overrides per-layer factors:
+#   { "layers": { "0-sky": 0.0, "1-hills": 0.4, "2-trees": 1.0 } }
+#   (values = drift multiplier, 0 = far/static, 1 = near/full drift)
+# Default factor for layer i of N: i/(N-1) (linear depth).
+#
+# Output: {"layers":[{"file":"<abs svg>","factor":0.0},...]}  (back -> front)
+
+DIR="${1:-}"
+[[ -z "$DIR" || ! -d "$DIR/layers" ]] && { echo '{"layers":[]}'; exit 0; }
+
+LAYERS_DIR="$DIR/layers"
+[[ -d "$LAYERS_DIR" ]] || LAYERS_DIR="$DIR"
+
+mapfile -t files < <(find "$LAYERS_DIR" -maxdepth 1 -type f -name '*.svg' | sort)
+N=${#files[@]}
+[[ $N -eq 0 ]] && { echo '{"layers":[]}'; exit 0; }
+
+json_escape() { python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "$1"; }
+
+# QtSvg cannot render SVG <image> elements, and our layer files are thin
+# wrappers around a raster asset. Resolve a wrapper to the asset it embeds
+# so QML can load the full-quality PNG/JPG directly; pass real vector SVGs
+# through untouched.
+resolve_layer() {
+  python3 - "$1" <<'PYEOF'
+import re, sys, os, json
+svg = sys.argv[1]
+try:
+    text = open(svg, encoding="utf-8", errors="replace").read()
+except Exception:
+    print(json.dumps(svg)); sys.exit(0)
+hrefs = list(dict.fromkeys(re.findall(r'(?:xlink:href|href)\s*=\s*"([^"]+)"', text)))
+# Only vector content: keep the svg (strip internal xlink refs to be safe)
+if re.search(r'<(path|rect|circle|ellipse|polygon|polyline|line|text|use)\b', text):
+    print(json.dumps(svg)); sys.exit(0)
+if len(hrefs) == 1:
+    h = hrefs[0]
+    if h.startswith("file://"):
+        h = h[7:]
+    elif not h.startswith("/"):
+        h = os.path.normpath(os.path.join(os.path.dirname(svg), h))
+    if os.path.exists(h):
+        print(json.dumps(h)); sys.exit(0)
+print(json.dumps(svg))
+PYEOF
+}
+
+out="["
+first=1
+for i in "${!files[@]}"; do
+  f="${files[$i]}"
+  base=$(basename "$f" .svg)
+  resolved=$(resolve_layer "$f")
+  factor=$(python3 - "$DIR" "$base" "$i" "$N" <<'PYEOF'
+import json, sys, os
+d, base, i, n = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
+cfg = os.path.join(d, "parallax.json")
+f = None
+try:
+    f = json.load(open(cfg)).get("layers", {}).get(base)
+except Exception:
+    pass
+if f is None:
+    f = 0.0 if n <= 1 else i / (n - 1)
+print(f)
+PYEOF
+)
+  [[ $first -eq 0 ]] && out+=","
+  first=0
+  out+="{\"file\":$resolved,\"factor\":$factor}"
+done
+out+="]"
+poster=$(find "$DIR" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.png' -o -iname '*.webp' \) | head -1)
+poster_json=$(json_escape "${poster:-}")
+echo "{\"layers\":$out,\"poster\":$poster_json}"

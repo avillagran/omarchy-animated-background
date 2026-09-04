@@ -1,0 +1,54 @@
+#!/bin/bash
+# Convert an animated source to a cached looping mp4 (+ poster jpg) so
+# Qt Multimedia can play it back as a real animated background/preview.
+# Handles:
+#   gif/webp/apng        -> mp4 (ffmpeg) + poster.jpg
+#   animated svg (SMIL/CSS animations) -> mp4 (headless Chromium) + poster.jpg
+#   static svg           -> png thumb only (meant for mouse-parallax display)
+# Usage: omarchy-bg-anim2mp4 <source>  -> prints playable mp4 path (may be empty)
+
+SRC="$1"
+[[ -z "$SRC" ]] && exit 1
+[[ -f "$SRC" ]] || exit 1
+
+CACHE_DIR="$HOME/.cache/omarchy/animated"
+mkdir -p "$CACHE_DIR"
+HASH=$(echo -n "$SRC" | md5sum | cut -c1-16)
+OUT="$CACHE_DIR/$HASH.mp4"
+POSTER="$OUT.poster.jpg"
+PNG="$CACHE_DIR/$HASH.png"
+EXT="${SRC##*.}"
+EXT=$(echo "$EXT" | tr '[:upper:]' '[:lower:]')
+
+if [[ "$EXT" == "svg" ]]; then
+  # does the svg actually animate over time?
+  if grep -qE '<animate|@keyframes|animation:|begin=' "$SRC" 2>/dev/null; then
+    if [[ ! -f "$OUT" ]]; then
+      # sibling first (plugin install), PATH as fallback
+      JS="$(dirname "$(readlink -f "$0")")/omarchy-bg-svg2mp4.js"
+      [[ -f "$JS" ]] || JS="$(command -v omarchy-bg-svg2mp4.js 2>/dev/null || true)"
+      [[ -n "$JS" && -f "$JS" ]] && node "$JS" "$SRC" "$OUT" 4 >/dev/null 2>&1
+    fi
+    [[ -f "$POSTER" ]] || ffmpeg -y -i "$OUT" -frames:v 1 -q:v 4 "$POSTER" >/dev/null 2>&1
+    [[ -f "$OUT" ]] && echo "$OUT"
+  else
+    # static svg: rasterize at screen width for the real background (QtSvg
+    # only supports SVG Tiny 1.2 and drops nested <svg> artwork) — parallax
+    # supplies the motion. librsvg renders the full document.
+    if [[ ! -f "$PNG" ]]; then
+      ffmpeg -y -i "$SRC" -frames:v 1 -vf "scale=2560:-2" "$PNG" >/dev/null 2>&1
+    fi
+    [[ -f "$PNG" ]] && echo "$PNG"
+  fi
+  exit 0
+fi
+
+if [[ ! -f "$OUT" ]]; then
+  ffmpeg -y -i "$SRC" -movflags +faststart -pix_fmt yuv420p \
+    -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -c:v libx264 -crf 26 \
+    "$OUT" >/dev/null 2>&1
+fi
+
+[[ -f "$POSTER" ]] || ffmpeg -y -i "$OUT" -frames:v 1 -q:v 4 "$POSTER" >/dev/null 2>&1
+
+[[ -f "$OUT" ]] && echo "$OUT"
