@@ -1,4 +1,4 @@
-# omarchy-animated-backgrounds
+# omarchy-animated-background
 
 Mouse-parallax, multi-source backgrounds for [Omarchy](https://omarchy.org) —
 as a **plugin**. This is the plugin edition of the parallax-background work
@@ -33,12 +33,12 @@ switcher with live previews.
 
 ```sh
 # 1. Plugin (classic install: clone + enable)
-omarchy plugin add https://github.com/avillagran/omarchy-animated-backgrounds --enable --yes
+omarchy plugin add https://github.com/avillagran/omarchy-animated-background --enable --yes
 
 # 2. Sample content — 11 videos + 2 ready-made parallax scenes
 #    (skip if you already have your own ~/Wallpapers content)
 curl -sL -o /tmp/omarchy-wallpapers.zip \
-  https://github.com/avillagran/omarchy-animated-backgrounds/releases/download/samplepack-v1/omarchy-wallpapers-samplepack.zip \
+  https://github.com/avillagran/omarchy-animated-background/releases/download/samplepack-v1/omarchy-wallpapers-samplepack.zip \
   && unzip -qo /tmp/omarchy-wallpapers.zip -d /tmp \
   && cp -r /tmp/omarchy-wallpapers-samplepack/Wallpapers ~/ \
   && rm -rf /tmp/omarchy-wallpapers.zip /tmp/omarchy-wallpapers-samplepack
@@ -72,7 +72,7 @@ omarchy-shell -q io.github.avillagran.omarchy-animated-backgrounds toggle
 ## Where your content goes
 
 > **Just want to try it?** Grab the
-> [sample wallpapers pack](https://github.com/avillagran/omarchy-animated-backgrounds/releases/tag/samplepack-v1)
+> [sample wallpapers pack](https://github.com/avillagran/omarchy-animated-background/releases/tag/samplepack-v1)
 > (11 videos + 2 parallax scenes) and unzip it into your home directory —
 > the switcher picks the files up live.
 
