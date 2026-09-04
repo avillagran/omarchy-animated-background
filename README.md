@@ -1,8 +1,13 @@
 # omarchy-animated-background
 
+> **BETA — preview of a future Omarchy feature.** This is the testing plugin
+> edition of the parallax/multi-source background system proposed to Omarchy
+> as a shell PR. It exists so users can try the feature on a **stock
+> Omarchy** install (no shell patches) while the upstream PR is reviewed;
+> once it lands in Omarchy, this plugin becomes unnecessary.
+
 Mouse-parallax, multi-source backgrounds for [Omarchy](https://omarchy.org) —
-as a **plugin**. This is the plugin edition of the parallax-background work
-proposed to Omarchy as a shell PR; installing the plugin gives you the same
+as a **plugin**. Installing the plugin gives you the same
 system on a **stock Omarchy** install, no shell patches required.
 
 The plugin renders its own background layer (image, video, animated, and
