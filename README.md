@@ -29,6 +29,10 @@ switcher with live previews.
   `~/.local/state/omarchy/current/background` symlink pointing at the real
   media, which Omarchy's `omarchy-bar-text-color` already samples.
 
+| ~ | What you get |
+|---|---|
+| ![Background switcher — ASCII/AUDIO category with live previews](preview.png) | ![Background switcher — VIDEOS and ANIMATED categories](screenshot.png) |
+
 ## Install
 
 ```sh
