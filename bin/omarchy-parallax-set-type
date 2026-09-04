@@ -104,7 +104,10 @@ if [[ -n "$PATH_ARG" ]]; then
       # renderer ON (the user may have toggled the background off; applying
       # from the switcher must bring it back).
       WRITE_STATE="$HOME/.config/omarchy/plugins/io.github.avillagran.omarchy-audio-background/bin/write_state.sh"
-      [[ -x "$WRITE_STATE" ]] && "$WRITE_STATE" "effect=$PATH_ARG" "running=1" >/dev/null 2>&1 || true
+      # effect+NAME also adds it to the plugin's enabled-effects list — the
+      # controller ignores an active effect that is not in the list, which
+      # made "apply" a no-op for users with a restricted effects set.
+      [[ -x "$WRITE_STATE" ]] && "$WRITE_STATE" "effect=$PATH_ARG" "effect+$PATH_ARG" "running=1" >/dev/null 2>&1 || true
       omarchy-shell -q "$IPC_TARGET" setSource "$TYPE" "$PATH_ARG" 2>/dev/null || true
       ;;
   esac
