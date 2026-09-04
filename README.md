@@ -54,6 +54,15 @@ config / sensei binds):
 bind = SUPER, B, exec, omarchy-shell -q io.github.avillagran.omarchy-animated-backgrounds toggle
 ```
 
+> **Bind takeover:** on first load the plugin takes over Omarchy's stock
+> `SUPER + CTRL + SPACE` (which opens the built-in background chooser) and
+> points it at this plugin's switcher instead. It does so by installing
+> `~/.config/hypr/hypr/parallax-backgrounds.lua` and adding one
+> `require("hypr.parallax-backgrounds")` line to `~/.config/hypr/hyprland.lua`
+> (idempotent, reapplied on every plugin load).
+> **Opt out:** delete that require line and run `hyprctl reload` — the stock
+> chooser bind returns.
+
 Or from a terminal:
 
 ```sh
