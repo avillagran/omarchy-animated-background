@@ -33,6 +33,14 @@ Item {
     ipcTarget: root.ipcTarget
   }
 
+  // Take over the stock SUPER+CTRL+SPACE background-switcher bind (installs
+  // ~/.config/hypr/hypr/parallax-backgrounds.lua + require line; idempotent).
+  Process {
+    id: keybindProc
+    command: [root.pluginDir + "/bin/omarchy-parallax-keybind"]
+    Component.onCompleted: running = true
+  }
+
   IpcHandler {
     target: root.ipcTarget
 

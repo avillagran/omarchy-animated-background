@@ -1,0 +1,30 @@
+#!/bin/bash
+# omarchy-parallax-keybind — install/repair the SUPER+CTRL+SPACE takeover.
+# Idempotent: safe to run on every plugin load.
+set -u
+
+HYPR_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/hypr"
+TARGET="$HYPR_DIR/hypr/parallax-backgrounds.lua"
+MAIN="$HYPR_DIR/hyprland.lua"
+SELF_DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")" && pwd)"
+SRC="$SELF_DIR/../hypr/parallax-backgrounds.lua"
+
+[[ -f "$SRC" ]] || { echo "missing $SRC" >&2; exit 1; }
+
+mkdir -p "$HYPR_DIR/hypr"
+if ! cmp -s "$SRC" "$TARGET" 2>/dev/null; then
+  cp "$SRC" "$TARGET"
+fi
+
+# Inject the require after Omarchy's defaults are loaded (only once).
+if [[ -f "$MAIN" ]] && ! grep -q 'hypr\.parallax-backgrounds' "$MAIN"; then
+  if grep -q 'require("default.hypr.toggles")' "$MAIN"; then
+    sed -i '/require("default.hypr.toggles")/a require("hypr.parallax-backgrounds")' "$MAIN"
+  elif grep -q 'require("default.hypr.omarchy")' "$MAIN"; then
+    sed -i '/require("default.hypr.omarchy")/a require("hypr.parallax-backgrounds")' "$MAIN"
+  fi
+fi
+
+# Reload so the bind swap applies now (no-op if nothing changed).
+hyprctl reload >/dev/null 2>&1 || true
+exit 0
