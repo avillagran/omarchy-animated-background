@@ -39,7 +39,11 @@ switcher with live previews.
 # 1. Plugin (classic install: clone + enable)
 omarchy plugin add https://github.com/avillagran/omarchy-animated-background --enable --yes
 
-# 2. Sample content — 11 videos + 2 ready-made parallax scenes
+# 2. Companion plugin — required for the ASCII/AUDIO backgrounds and their
+#    live previews (it renders the effects as real desktop backgrounds)
+omarchy plugin add https://github.com/avillagran/omarchy-audio-background --enable --yes
+
+# 3. Sample content — 11 videos + 2 ready-made parallax scenes
 #    (skip if you already have your own ~/Wallpapers content)
 curl -sL -o /tmp/omarchy-wallpapers.zip \
   https://github.com/avillagran/omarchy-animated-background/releases/download/samplepack-v1/omarchy-wallpapers-samplepack.zip \
@@ -47,7 +51,7 @@ curl -sL -o /tmp/omarchy-wallpapers.zip \
   && cp -r /tmp/omarchy-wallpapers-samplepack/Wallpapers ~/ \
   && rm -rf /tmp/omarchy-wallpapers.zip /tmp/omarchy-wallpapers-samplepack
 
-# 3. Open the switcher once (or bind it — see below)
+# 4. Open the switcher once (or bind it — see below)
 omarchy-shell io.github.avillagran.omarchy-animated-backgrounds toggle
 ```
 
@@ -73,19 +77,14 @@ Or from a terminal:
 omarchy-shell -q io.github.avillagran.omarchy-animated-backgrounds toggle
 ```
 
-### Companion plugin (for ASCII/audio backgrounds)
+### Companion plugin
 
-The ASCII/AUDIO category works out of the box (listings, posters, live
-previews of the natively-rendered effects). To also **run** ASCII/audio
-effects as real desktop backgrounds — and get live previews of the full
-effect set — install the companion plugin:
-
-```sh
-omarchy plugin add https://github.com/avillagran/omarchy-audio-background --enable --yes
-```
-
-Without it, applying an ASCII effect leaves a transparent background (your
-previous wallpaper shows through) instead of the effect.
+Step 2 of the install installs
+[omarchy-audio-background](https://github.com/avillagran/omarchy-audio-background),
+which renders the ASCII/AUDIO effects as real desktop backgrounds and powers
+their live previews in the switcher. Without it, applying an ASCII effect
+leaves a transparent background (your previous wallpaper shows through)
+instead of the effect.
 
 ## Where your content goes
 
