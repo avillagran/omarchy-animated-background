@@ -29,11 +29,13 @@ Item {
     { id: "video",    label: "VIDEOS",      color: "#f38ba8" },
     { id: "animated", label: "ANIMATED",    color: "#a6e3a1" },
     { id: "retro",    label: "PROGRAMABLE", color: "#cba6f7" },
-    { id: "amiga",    label: "AMIGA",       color: "#89dceb" },
+    { id: "amiga",    label: "AMIGA DEMOSCENE", color: "#89dceb" },
     { id: "audio",    label: "ASCII/AUDIO", color: "#fab387" }
   ]
   property int categoryIndex: 0
   property bool parallaxEnabled: true
+  property bool amigaLoop: true
+  property bool amigaMute: false
 
   property var currentItems: []
   property int selectedIndex: 0
@@ -145,6 +147,20 @@ Item {
   function toggleParallax() {
     root.parallaxEnabled = !root.parallaxEnabled
     Quickshell.execDetached(["omarchy-shell", "-q", root.ipcTarget, "toggleParallax"])
+  }
+
+  function amigaActive() { return root.categories[root.categoryIndex].id === "amiga" }
+
+  function toggleAmigaLoop() {
+    if (!root.amigaActive()) return
+    Quickshell.execDetached([root.home + "/.config/omarchy/plugins/io.github.avillagran.omarchy-amiga/bin/omarchy-amiga", "toggle-loop"])
+    root.amigaLoop = !root.amigaLoop
+  }
+
+  function toggleAmigaMute() {
+    if (!root.amigaActive()) return
+    Quickshell.execDetached([root.home + "/.config/omarchy/plugins/io.github.avillagran.omarchy-amiga/bin/omarchy-amiga", "toggle-mute"])
+    root.amigaMute = !root.amigaMute
   }
 
   function cycleParallaxResolution(delta) {
@@ -345,6 +361,20 @@ Item {
     }
   }
 
+  Process {
+    id: readAmigaLoopProc
+    command: ["cat", root.home + "/.local/state/omarchy/amiga/loop"]
+    running: root.opened && root.amigaActive()
+    stdout: StdioCollector { onStreamFinished: root.amigaLoop = this.text.trim() !== "off" }
+  }
+
+  Process {
+    id: readAmigaMuteProc
+    command: ["cat", root.home + "/.local/state/omarchy/amiga/mute"]
+    running: root.opened && root.amigaActive()
+    stdout: StdioCollector { onStreamFinished: root.amigaMute = this.text.trim() === "on" }
+  }
+
   // If the type read stalls (missing state file), still land on IMAGES.
   Timer {
     id: categoryFallbackTimer
@@ -472,6 +502,12 @@ Item {
           event.accepted = true
         } else if (event.key === Qt.Key_Space) {
           root.toggleParallax()
+          event.accepted = true
+        } else if (root.amigaActive() && event.key === Qt.Key_I) {
+          root.toggleAmigaLoop()
+          event.accepted = true
+        } else if (root.amigaActive() && event.key === Qt.Key_M) {
+          root.toggleAmigaMute()
           event.accepted = true
         } else if (event.key === Qt.Key_Plus || event.key === Qt.Key_Equal) {
           root.cycleParallaxResolution(1)
@@ -887,6 +923,18 @@ Item {
           color: root.parallaxEnabled ? root.foreground : Util.alpha(root.foreground, 0.4)
           font.pixelSize: 12; font.family: Style.font.display
           text: "resolution " + root.parallaxResolution + "  (-/+)"
+        }
+        Text {
+          visible: root.amigaActive()
+          color: root.amigaLoop ? root.categories[root.categoryIndex].color : Util.alpha(root.foreground, 0.45)
+          font.pixelSize: 12; font.family: Style.font.display
+          text: "I loop " + (root.amigaLoop ? "on" : "off")
+        }
+        Text {
+          visible: root.amigaActive()
+          color: root.amigaMute ? Util.alpha(root.foreground, 0.45) : root.categories[root.categoryIndex].color
+          font.pixelSize: 12; font.family: Style.font.display
+          text: "M mute " + (root.amigaMute ? "on" : "off")
         }
         Text { color: root.foreground; font.pixelSize: 12; font.family: Style.font.display; text: "esc cancel" }
       }
