@@ -15,6 +15,7 @@ import time
 
 RATE = 8000
 WINDOW = 256
+ANALYSIS_EVERY = 2
 SPECTRUM_BINS = 16
 TWIDDLES = [
     [(math.cos(2.0 * math.pi * k * n / WINDOW),
@@ -69,10 +70,14 @@ def capture():
         return
 
     previous = 0.0
+    analysis_tick = 0
     while True:
         raw = proc.stdout.read(WINDOW * 4) if proc.stdout else b""
         if len(raw) < WINDOW * 4:
             break
+        analysis_tick += 1
+        if analysis_tick % ANALYSIS_EVERY:
+            continue
         samples = array.array("f")
         samples.frombytes(raw)
         rms = min(1.0, math.sqrt(sum(x * x for x in samples) / len(samples)) * 4.0)
