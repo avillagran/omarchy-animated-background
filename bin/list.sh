@@ -40,7 +40,7 @@ case "$CATEGORY" in
   video)
     dir="$HOME/Wallpapers/Videos"
     [[ -d "$dir" ]] || exit 0
-    find -L "$dir" -maxdepth 1 -type f \( -iname '*.mp4' -o -iname '*.mkv' -o -iname '*.mov' -o -iname '*.webm' -o -iname '*.avi' \) -print0 2>/dev/null |
+    find -L "$dir" -maxdepth 1 -type f \( -iname '*.mp4' -o -iname '*.m4v' -o -iname '*.mkv' -o -iname '*.mov' -o -iname '*.webm' -o -iname '*.avi' \) -print0 2>/dev/null |
       sort -z | while IFS= read -r -d '' f; do
         name=$(basename "$f" | sed 's/\.[^.]*$//')
         thumb="$f"
