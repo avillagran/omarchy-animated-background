@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
@@ -80,7 +81,7 @@ Item {
   function isVideoPath(path) {
     if (!path) return false
     var ext = String(path).split(".").pop().toLowerCase()
-    return ["mp4", "mkv", "mov", "webm", "avi"].indexOf(ext) !== -1
+    return ["mp4", "m4v", "mkv", "mov", "webm", "avi"].indexOf(ext) !== -1
   }
 
   // Parallax backgrounds are directories: <dir>/layers/0-*.svg ... Any path
@@ -98,7 +99,7 @@ Item {
   function fileUrl(path) {
     if (!path) return ""
     if (path.startsWith("file://") || path.startsWith("http://") || path.startsWith("https://")) return path
-    return "file://" + path
+    return "file://" + String(path).split("/").map(encodeURIComponent).join("/")
   }
 
   // Re-apply the persisted source once we know both the type and the path.
@@ -368,6 +369,9 @@ Item {
       color: "transparent"
       updatesEnabled: true
       property bool maskReady: false
+      readonly property var hyprlandMonitor: Hyprland.monitorFor(modelData)
+      readonly property var visibleWorkspace: hyprlandMonitor ? hyprlandMonitor.activeWorkspace : null
+      readonly property bool fullscreenHere: visibleWorkspace ? visibleWorkspace.hasFullscreen : false
 
       Connections {
         target: root
@@ -432,13 +436,71 @@ Item {
         id: videoRendererComponent
         Item {
           anchors.fill: parent
-          MediaPlayer {
-            id: videoPlayer
-            source: root.isVideoPath(root.displayedSource) ? root.fileUrl(root.displayedSource) : ""
-            loops: MediaPlayer.Infinite; autoPlay: true; videoOutput: videoOutput
-            onPlaybackStateChanged: { if (playbackState === MediaPlayer.PlayingState) root.onRendererReady() }
+          // Use Omarchy's shared native video implementation when the running
+          // OS provides it. The file is deliberately loaded from the system
+          // Ui module instead of copied into this plugin, so decoder fixes and
+          // power/video lifecycle improvements arrive with Omarchy updates.
+          Loader {
+            id: systemVideoLoader
+            anchors.fill: parent
+            source: "file:///usr/share/omarchy/shell/Ui/BackgroundVideo.qml"
+            onStatusChanged: if (status === Loader.Error) fallbackVideoLoader.active = true
           }
-          VideoOutput { id: videoOutput; anchors.fill: parent; fillMode: VideoOutput.PreserveAspectCrop }
+
+          Binding {
+            target: systemVideoLoader.item
+            property: "mediaSource"
+            value: root.isVideoPath(root.displayedSource) ? root.fileUrl(root.displayedSource) : ""
+            when: systemVideoLoader.item !== null
+          }
+          Binding {
+            target: systemVideoLoader.item
+            property: "playbackEnabled"
+            value: !panel.fullscreenHere && !root.coverOn
+            when: systemVideoLoader.item !== null
+          }
+          Binding {
+            target: systemVideoLoader.item
+            property: "audioEnabled"
+            value: false
+            when: systemVideoLoader.item !== null
+          }
+
+          Loader {
+            id: fallbackVideoLoader
+            anchors.fill: parent
+            active: systemVideoLoader.status === Loader.Error
+            sourceComponent: fallbackVideoComponent
+          }
+
+          Component {
+            id: fallbackVideoComponent
+            Item {
+              anchors.fill: parent
+              MediaPlayer {
+                id: fallbackPlayer
+                source: root.isVideoPath(root.displayedSource) ? root.fileUrl(root.displayedSource) : ""
+                loops: MediaPlayer.Infinite
+                autoPlay: true
+                videoOutput: fallbackOutput
+                onPlaybackStateChanged: {
+                  if (playbackState === MediaPlayer.PlayingState) root.onRendererReady()
+                }
+              }
+              VideoOutput {
+                id: fallbackOutput
+                anchors.fill: parent
+                fillMode: VideoOutput.PreserveAspectCrop
+              }
+            }
+          }
+
+          Connections {
+            target: systemVideoLoader.item
+            function onReadyChanged() {
+              if (systemVideoLoader.item.ready) root.onRendererReady()
+            }
+          }
         }
       }
 
