@@ -503,7 +503,7 @@ Item {
         } else if (event.key === Qt.Key_Space) {
           root.toggleParallax()
           event.accepted = true
-        } else if (root.amigaActive() && event.key === Qt.Key_I) {
+        } else if (root.amigaActive() && event.key === Qt.Key_L) {
           root.toggleAmigaLoop()
           event.accepted = true
         } else if (root.amigaActive() && event.key === Qt.Key_M) {
@@ -928,7 +928,7 @@ Item {
           visible: root.amigaActive()
           color: root.amigaLoop ? root.categories[root.categoryIndex].color : Util.alpha(root.foreground, 0.45)
           font.pixelSize: 12; font.family: Style.font.display
-          text: "I loop " + (root.amigaLoop ? "on" : "off")
+          text: "L loop " + (root.amigaLoop ? "on" : "off")
         }
         Text {
           visible: root.amigaActive()
