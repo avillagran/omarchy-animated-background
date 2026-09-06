@@ -10,9 +10,9 @@ Mouse-parallax, multi-source backgrounds for [Omarchy](https://omarchy.org) —
 as a **plugin**. Installing the plugin gives you the same
 system on a **stock Omarchy** install, no shell patches required.
 
-The plugin renders its own background layer (image, video, animated, and
-layered parallax scenes) above the regular wallpaper, and ships a background
-switcher with live previews.
+The plugin renders its own background layer (image, video, animated, programmable
+pixel-art scrolling, and layered parallax scenes) above the regular wallpaper,
+and ships a background switcher with live previews.
 
 ## Features
 
@@ -24,6 +24,10 @@ switcher with live previews.
 - **Animated sources** — `gif`/`webp`/`apng` are converted once to a cached
   looping `mp4`; static/responsive `svg` artwork gets the parallax drift.
 - **Videos** and plain **images**, with crossfade transitions.
+- **PROGRAMMABLE demo/game engine** — original procedural scenes inspired by SNES and
+  Amiga-era demos: low-resolution tile layers, independent scroll speeds,
+  limited palettes, stars, perspective grids and scanlines. The PNGs are only
+  selector posters; the active scene is rendered by the engine at runtime.
 - **ASCII/AUDIO category** — live effect previews in the switcher (install the
   companion [omarchy-audio-background](https://github.com/avillagran/omarchy-audio-background)
   plugin to also run them as real desktop backgrounds).
@@ -102,7 +106,49 @@ instead of the effect.
 ~/Wallpapers/Images/    still images (jpg/png/webp/bmp; theme wallpapers also listed)
 ~/Wallpapers/Videos/    videos (mp4/mkv/mov/webm/avi)
 ~/Wallpapers/Animated/  gif/webp/apng/svg files AND parallax scene directories
+~/Wallpapers/Retro/     programmable Lua scenes (+ optional same-name PNG poster)
 ```
+
+Programmable scenes can also be placed in `~/.config/omarchy/retro/`; each `.lua`
+file is loaded by the engine and its same-name `.png`/`.jpg` is optional for
+the picker preview. The bundled filenames select the examples (`tron`,
+`neon-district`, `sunset-run`, and `spaceballs`).
+
+If the PlebsPlayer repository is present at `~/Desarrollo/PlebsPlayerOSS`, its
+visualizer presets are listed automatically as RETRO scenes too. The engine
+accepts the PlebsPlayer global API (`setup`, `render`, `width`, `height`,
+`time`, `delta`, `bass`, `mid`, `treble`, `spectrum`, `waveform`, `beat`,
+`rgb`, `rgba`, `hsv`, `hsva`, `wave`, and the primitive drawing functions), so
+the same Lua preset can be used by both projects. Audio values are accepted
+by the frame protocol; the background bridge can provide them without
+changing the preset.
+
+A scene returns one render function. It receives the frame number and a small
+API (`clear`, `rect`, `line`, `circle`, `poly`) and returns drawing commands:
+
+```lua
+return function(frame, api)
+  return {
+    api.clear("#050817"),
+    api.rect((frame % 320), 80, 8, 8, "#00ffff"),
+    api.line(0, 120, 320, 120, "#ff00aa", 1),
+  }
+end
+```
+
+For the `nfd/sota`/Spaceballs shape format, convert the original JSON data
+(`indices` + `data`) instead of recreating the animation by hand:
+
+```sh
+bin/sota-json-to-lua.py script0b989c.json ~/Wallpapers/Retro/spaceballs-3d.lua
+```
+
+The converter ports the SOTA `dX` polygon commands and `e6/e7/e8/f2` tween
+commands to a self-contained Lua scene. It scales the original 256x205
+coordinates to the RETRO renderer and preserves the frame sequence. DMS files
+are Amiga disk images containing binaries/data, not source code; unpack them
+with an external DMS/ADF tool first and feed any recovered SOTA JSON to this
+converter.
 
 A **parallax scene** is a directory in `~/Wallpapers/Animated/`:
 

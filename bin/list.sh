@@ -93,6 +93,36 @@ case "$CATEGORY" in
         done
     done
     ;;
+  retro)
+    # Programmable Lua scenes. A same-name PNG is optional and is used only
+    # as the selector poster; the active background is rendered by Lua.
+    dirs=(
+      "$PLUGIN_DIR/../assets/retro"
+      "$HOME/Desarrollo/PlebsPlayerOSS/assets/visualizers/presets"
+      "$HOME/.config/omarchy/retro"
+      "$HOME/Wallpapers/Retro"
+    )
+    for dir in "${dirs[@]}"; do
+      [[ -d "$dir" ]] || continue
+      find -L "$dir" -maxdepth 1 -type f -iname '*.lua' -print0 2>/dev/null |
+        sort -z | while IFS= read -r -d '' f; do
+          name=$(basename "$f" | sed 's/\.[^.]*$//')
+          preview="${f%.lua}.png"
+          [[ -f "$preview" ]] || preview="${f%.lua}.jpg"
+          [[ -f "$preview" ]] || preview=""
+          printf 'retro\t%s\t%s\t%s\t%s\t%s\n' "$f" "$name" "$preview" "" "$f"
+        done
+    done
+    ;;
+  amiga)
+    dir="$HOME/Wallpapers/Amiga"
+    [[ -d "$dir" ]] || exit 0
+    find -L "$dir" -maxdepth 1 -type f \( -iname '*.dms' -o -iname '*.adf' \) -print0 2>/dev/null |
+      sort -z | while IFS= read -r -d '' f; do
+        name=$(basename "$f" | sed 's/\.[^.]*$//')
+        printf 'amiga\t%s\t%s\t%s\t%s\t%s\n' "$f" "$name" "" "" "$f"
+      done
+    ;;
   audio)
     # The plugin's own curated effect list (state.json "effects") — what the
     # user sees in the audio-background panel. 14 are backed by the ttfx

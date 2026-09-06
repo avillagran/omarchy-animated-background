@@ -4,7 +4,7 @@
   "name": "Animated & Parallax Backgrounds",
   "version": "0.1.0",
   "author": "avillagran",
-  "description": "Mouse-parallax multi-source backgrounds (image, video, animated, layered parallax scenes) with a live background switcher. Plugin edition of the omarchy parallax-background PR — try it without patching the shell.",
+  "description": "Mouse-parallax multi-source backgrounds with a programmable Lua retro demo engine, layered parallax scenes, and a live background switcher. Plugin edition of the omarchy parallax-background PR — try it without patching the shell.",
   "kinds": [
     "service"
   ],
