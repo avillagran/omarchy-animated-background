@@ -436,6 +436,15 @@ Item {
         id: videoRendererComponent
         Item {
           anchors.fill: parent
+          property bool systemVideoAvailable: false
+
+          Process {
+            id: systemVideoCheck
+            command: ["test", "-r", "/usr/share/omarchy/shell/Ui/BackgroundVideo.qml"]
+            running: true
+            onExited: function(exitCode) { parent.systemVideoAvailable = exitCode === 0 }
+          }
+
           // Use Omarchy's shared native video implementation when the running
           // OS provides it. The file is deliberately loaded from the system
           // Ui module instead of copied into this plugin, so decoder fixes and
@@ -443,8 +452,9 @@ Item {
           Loader {
             id: systemVideoLoader
             anchors.fill: parent
-            source: "file:///usr/share/omarchy/shell/Ui/BackgroundVideo.qml"
-            onStatusChanged: if (status === Loader.Error) fallbackVideoLoader.active = true
+            active: parent.systemVideoAvailable
+            source: active ? "file:///usr/share/omarchy/shell/Ui/BackgroundVideo.qml" : ""
+            onStatusChanged: if (status === Loader.Error) parent.systemVideoAvailable = false
           }
 
           Binding {
@@ -469,7 +479,7 @@ Item {
           Loader {
             id: fallbackVideoLoader
             anchors.fill: parent
-            active: systemVideoLoader.status === Loader.Error
+            active: !parent.systemVideoAvailable
             sourceComponent: fallbackVideoComponent
           }
 
