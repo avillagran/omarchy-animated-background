@@ -161,9 +161,9 @@ Item {
       return
     }
 
-    // Video/animated swap under a black cover, revealed when the new
+    // Video/animated/retro swap under a black cover, revealed when the new
     // renderer is actually producing frames.
-    if (bgSourceType === "video" || bgSourceType === "animated") {
+    if (bgSourceType === "video" || bgSourceType === "animated" || bgSourceType === "retro") {
       oldSource = ""; incomingSource = ""; revealProgress = 1
       root.swapTarget = path
       coverSafetyTimer.restart()
@@ -184,7 +184,7 @@ Item {
 
   function tryReveal() {
     if (!root.coverOn || root.displayedSource !== root.swapTarget) return
-    if ((bgSourceType === "video" || bgSourceType === "animated") && !rendererReady) return
+    if ((bgSourceType === "video" || bgSourceType === "animated" || bgSourceType === "retro") && !rendererReady) return
     root.coverOn = false
   }
 
@@ -393,7 +393,7 @@ Item {
             id: base
             anchors.fill: parent
             source: root.isImagePath(root.displayedSource) ? root.imageUrl(root.displayedSource) : ""
-            fillMode: Image.PreserveAspectCrop; asynchronous: false; cache: true
+            fillMode: Image.PreserveAspectCrop; asynchronous: true; cache: true
             // Always notify: the cover-fade path (animated svg/png via the
             // image renderer) needs this to reveal once the frame is ready.
             onStatusChanged: { if (status === Image.Ready) root.onRendererReady() }
@@ -403,7 +403,7 @@ Item {
             id: oldFrame
             anchors.fill: parent
             source: root.isImagePath(root.oldSource) ? root.imageUrl(root.oldSource) : ""
-            fillMode: Image.PreserveAspectCrop; asynchronous: false; cache: false; smooth: true; mipmap: true
+            fillMode: Image.PreserveAspectCrop; asynchronous: true; cache: false; smooth: true; mipmap: false
             visible: root.oldSource !== "" && root.revealProgress < 1
           }
 
@@ -420,7 +420,7 @@ Item {
               id: incomingFrame
               anchors.fill: parent
               source: root.isImagePath(root.incomingSource) ? root.imageUrl(root.incomingSource) : ""
-              fillMode: Image.PreserveAspectCrop; asynchronous: false; cache: false; smooth: true; mipmap: true
+              fillMode: Image.PreserveAspectCrop; asynchronous: true; cache: false; smooth: true; mipmap: false
               onStatusChanged: { if (status === Image.Ready) root.onRendererReady() }
             }
           }
@@ -466,6 +466,153 @@ Item {
         }
       }
 
+      // --- Retro renderer (procedural 90s demo/game engine) ---
+      // Posters in assets/retro are selector previews only. The active scene
+      // is rendered at 320x180 and scaled with nearest-neighbour pixels. Each
+      // scene has independent tile layers, a camera, palette and effects.
+      Component {
+        id: retroRendererComponent
+        Item {
+          id: retro
+          anchors.fill: parent
+          property int frame: 0
+          property string scene: String(root.displayedSource).toLowerCase()
+          property var commands: []
+
+          function hash(n) { return Math.abs(Math.sin(n * 12.9898) * 43758.5453) % 1 }
+          function rect(ctx, x, y, w, h, color) {
+            ctx.fillStyle = color; ctx.fillRect(Math.floor(x), Math.floor(y), Math.ceil(w), Math.ceil(h))
+          }
+          function mountain(ctx, points, color) {
+            ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(points[0], points[1])
+            for (var i = 2; i < points.length; i += 2) ctx.lineTo(points[i], points[i + 1])
+            ctx.closePath(); ctx.fill()
+          }
+          function drawSunset(ctx, t) {
+            var bands = ["#171b46", "#25235b", "#43276d", "#71366f", "#b64d69", "#e8786a", "#f5ae72", "#f6cf83"]
+            for (var b = 0; b < bands.length; b++) rect(ctx, 0, b * 20, 320, 21, bands[b])
+            rect(ctx, 232, 39, 34, 34, "#ffe39a"); rect(ctx, 237, 44, 24, 24, "#fff1b0")
+            mountain(ctx, [0,116,35,83,70,111,106,74,148,112,190,78,235,115,270,91,320,116,320,180,0,180], "#25244e")
+            mountain(ctx, [0,139,43,104,88,132,129,97,171,137,214,106,262,137,300,111,320,130,320,180,0,180], "#171b38")
+            for (var x = -320; x < 640; x += 56) {
+              var px = x - ((t * 0.35) % 56); rect(ctx, px, 156, 29, 2, "#49325d")
+            }
+            rect(ctx, 0, 171, 320, 9, "#0b102b")
+            for (var r = 0; r < 4; r++) {
+              var rw = 4 + r * 5; rect(ctx, 157 - rw / 2, 164 + r * 4, rw, 2, "#f6c875")
+            }
+          }
+          function drawNeon(ctx, t) {
+            rect(ctx, 0, 0, 320, 180, "#080d25")
+            for (var s = 0; s < 34; s++) {
+              var sx = Math.floor(hash(s * 17) * 320), sy = Math.floor(hash(s * 31) * 110)
+              rect(ctx, sx, sy, 1 + (s % 2), 1 + (s % 2), s % 3 ? "#54e0d0" : "#f58ad7")
+            }
+            rect(ctx, 235, 25, 30, 30, "#f7f0ac"); rect(ctx, 246, 25, 19, 8, "#080d25")
+            var buildings = [[0,82,39,"#182057"],[43,58,76,"#20256c"],[80,91,115,"#171b4c"],[119,47,151,"#27266e"],[155,72,190,"#1b2057"],[194,39,229,"#29246d"],[233,68,270,"#172052"],[274,52,320,"#25205f"]]
+            for (var q = 0; q < buildings.length; q++) {
+              var v = buildings[q]; rect(ctx, v[0], v[1], v[2]-v[0], 139-v[1], v[3])
+              for (var wy = v[1]+10; wy < 130; wy += 13) {
+                for (var wx = v[0]+7; wx < v[2]-3; wx += 12)
+                  if ((wx + wy + q) % 3) rect(ctx, wx, wy, 4, 3, (q % 2) ? "#49daca" : "#e65fba")
+              }
+            }
+            rect(ctx, 0, 139, 320, 41, "#0b102d")
+            for (var g = -320; g < 640; g += 32) rect(ctx, g - ((t * 1.2) % 32), 151, 18, 2, "#e65fba")
+            for (var gy = 145; gy < 180; gy += 9) rect(ctx, 0, gy, 320, 1, "#17234b")
+          }
+          function drawFrontier(ctx, t) {
+            rect(ctx, 0, 0, 320, 180, "#050817")
+            for (var s = 0; s < 42; s++) {
+              var sx = Math.floor((hash(s * 19) * 320 + t * (0.2 + hash(s) * 0.7)) % 320)
+              var sy = Math.floor(hash(s * 29) * 122); rect(ctx, sx, sy, 1 + s % 2, 1 + s % 2, s % 4 ? "#7ad7f2" : "#ffe19a")
+            }
+            rect(ctx, 228, 31, 45, 45, "#b65be2"); rect(ctx, 237, 39, 29, 29, "#e98ad0"); rect(ctx, 244, 46, 15, 15, "#ffcf8e")
+            mountain(ctx, [0,130,25,99,49,120,78,87,108,124,138,96,172,127,205,92,244,123,277,101,320,130,320,180,0,180], "#241b4e")
+            for (var r = 0; r < 8; r++) {
+              var y = 140 + r * 5; var w = 18 + r * 30; rect(ctx, 160-w/2-((t*0.5)%8), y, w, 2, r % 2 ? "#8d3c9c" : "#2c5e9a")
+            }
+            rect(ctx, 0, 174, 320, 6, "#0a102e")
+          }
+
+          Process {
+            id: retroProc
+            command: [root.pluginDir + "/bin/retro-audio-engine.py", String(root.displayedSource)]
+            stdinEnabled: true
+            running: true
+            stdout: SplitParser {
+              onRead: function(line) {
+                try { retro.commands = JSON.parse(line) } catch (e) { retro.commands = [] }
+                engine.requestPaint()
+              }
+            }
+          }
+
+          Connections {
+            target: root
+            function onDisplayedSourceChanged() {
+              retro.scene = String(root.displayedSource).toLowerCase()
+              retro.frame = 0
+              retro.commands = []
+              retroProc.running = false
+              Qt.callLater(function() { retroProc.running = true })
+            }
+          }
+
+          Canvas {
+            id: engine
+            width: 320; height: 180
+            anchors.centerIn: parent
+            scale: Math.max(parent.width / width, parent.height / height)
+            layer.enabled: true; layer.smooth: false
+            onPaint: {
+              var ctx = getContext("2d")
+              for (var i = 0; i < retro.commands.length; i++) {
+                var cmd = retro.commands[i]
+                if (cmd[0] === "clear") {
+                  ctx.fillStyle = cmd[1]; ctx.fillRect(0, 0, 320, 180)
+                } else if (cmd[0] === "rect") {
+                  ctx.fillStyle = cmd[5];
+                  if (cmd[6] === false) { ctx.strokeStyle = cmd[5]; ctx.lineWidth = 1; ctx.strokeRect(Math.floor(cmd[1]), Math.floor(cmd[2]), Math.ceil(cmd[3]), Math.ceil(cmd[4])) }
+                  else ctx.fillRect(Math.floor(cmd[1]), Math.floor(cmd[2]), Math.ceil(cmd[3]), Math.ceil(cmd[4]))
+                } else if (cmd[0] === "line") {
+                  ctx.strokeStyle = cmd[5]; ctx.lineWidth = cmd[6] || 1; ctx.beginPath()
+                  ctx.moveTo(Math.floor(cmd[1]), Math.floor(cmd[2])); ctx.lineTo(Math.floor(cmd[3]), Math.floor(cmd[4])); ctx.stroke()
+                } else if (cmd[0] === "circle") {
+                  ctx.beginPath(); ctx.arc(cmd[1], cmd[2], cmd[3], 0, Math.PI * 2)
+                  if (cmd[5] === false) { ctx.strokeStyle = cmd[4]; ctx.lineWidth = 1; ctx.stroke() }
+                  else { ctx.fillStyle = cmd[4]; ctx.fill() }
+                } else if (cmd[0] === "poly") {
+                  ctx.fillStyle = cmd[2]; ctx.beginPath(); ctx.moveTo(cmd[1][1], cmd[1][2])
+                  for (var p = 3; p < cmd[1].length; p += 2) ctx.lineTo(cmd[1][p], cmd[1][p + 1])
+                  ctx.closePath(); ctx.fill()
+                }
+              }
+            }
+          }
+
+          // Never show the selector poster while the first Lua frame is pending.
+          Rectangle {
+            anchors.fill: engine
+            color: "#030611"
+            z: -1
+          }
+
+          Timer {
+            interval: 40; repeat: true; running: true
+            onTriggered: {
+              retro.frame = (retro.frame + 1) % 100000
+              if (retroProc.running) retroProc.write("frame " + retro.frame + "\n")
+            }
+          }
+
+          Component.onCompleted: {
+            engine.requestPaint(); root.onRendererReady()
+            Qt.callLater(function() { if (retroProc.running) retroProc.write("frame 0\n") })
+          }
+        }
+      }
+
       // --- Parallax renderer (layered SVG artwork, depth drift) ---
       // The applied path is a directory: layers/0-*.svg ... N-*.svg stacked
       // back -> front. Each layer drifts by factor * (mouse parallax + slow
@@ -506,6 +653,7 @@ Item {
 
           // Slow endless sway so the scene feels alive without the mouse.
           SequentialAnimation on driftT {
+            running: root.parallaxEnabled && root.bgSourceType === "animated"
             loops: Animation.Infinite
             NumberAnimation { from: 0; to: 1; duration: 26000; easing.type: Easing.InOutSine }
             NumberAnimation { from: 1; to: 0; duration: 26000; easing.type: Easing.InOutSine }
@@ -568,6 +716,13 @@ Item {
         }
       }
 
+      // FS-UAE owns the pixels in AMIGA mode. Keep this layer transparent so
+      // its background window remains visible below normal application windows.
+      Component {
+        id: amigaRendererComponent
+        Item { anchors.fill: parent }
+      }
+
       // --- Parallax layer (mouse-driven depth) ---
       Item {
         id: parallaxLayer
@@ -577,20 +732,24 @@ Item {
 
       Loader {
         id: rendererLoader
+        readonly property bool needsParallax: root.parallaxEnabled &&
+          (root.bgSourceType === "image" || root.bgSourceType === "animated")
         // Slightly oversized and mouse-driven: every background type gets a
         // subtle parallax drift so static/responsive SVG artwork stays alive.
         // Headroom scales with the parallax strength (resolution) so the
         // drift never exposes an edge at high strengths.
-        width: parent.width * (1 + 0.06 * root.prxHeadroomScale)
-        height: parent.height * (1 + 0.06 * root.prxHeadroomScale)
-        x: (parent.width - width) / 2 + root.parallaxX
-        y: (parent.height - height) / 2 + root.parallaxY
+        width: parent.width * (needsParallax ? 1 + 0.06 * root.prxHeadroomScale : 1)
+        height: parent.height * (needsParallax ? 1 + 0.06 * root.prxHeadroomScale : 1)
+        x: needsParallax ? (parent.width - width) / 2 + root.parallaxX : 0
+        y: needsParallax ? (parent.height - height) / 2 + root.parallaxY : 0
         Behavior on x { NumberAnimation { duration: 1400; easing.type: Easing.OutCubic } }
         Behavior on y { NumberAnimation { duration: 1400; easing.type: Easing.OutCubic } }
         sourceComponent: {
           switch (root.bgSourceType) {
             case "video": return videoRendererComponent
             case "audio": return audioRendererComponent
+            case "retro": return retroRendererComponent
+            case "amiga": return amigaRendererComponent
             // Animated sources are converted to a cached looping mp4 by
             // omarchy-bg-set-type; static SVGs (responsive artwork) stay
             // as images and get their motion from the parallax drift;
@@ -648,7 +807,8 @@ Item {
       MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton | Qt.RightButton
-        hoverEnabled: true
+        hoverEnabled: root.parallaxEnabled &&
+          (root.bgSourceType === "image" || root.bgSourceType === "animated")
         onPositionChanged: function(mouse) {
           if (!root.parallaxEnabled) return
           root.parallaxX = ((mouse.x / width) * 2 - 1) * -root.pxAmpX

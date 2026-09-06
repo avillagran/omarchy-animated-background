@@ -5,7 +5,7 @@
 # renderer over IPC (target = the plugin id, never the first-party
 # `background` target).
 #
-# Usage: omarchy-parallax-set-type <image|video|audio|animated> [path]
+# Usage: omarchy-parallax-set-type <image|video|audio|animated|retro|amiga> [path]
 
 set -e
 
@@ -15,7 +15,7 @@ TYPE="$1"
 PATH_ARG="$2"
 
 if [[ -z "$TYPE" ]]; then
-  echo "Usage: omarchy-parallax-set-type <image|video|audio|animated> [path]" >&2
+  echo "Usage: omarchy-parallax-set-type <image|video|audio|animated|retro|amiga> [path]" >&2
   exit 1
 fi
 
@@ -47,11 +47,11 @@ sync_bar_symlink() {
 }
 
 case "$TYPE" in
-  image|video|audio|animated)
+  image|video|audio|animated|retro|amiga)
     echo "$TYPE" > "$STATE_DIR/bg-source-type"
     ;;
   *)
-    echo "Unknown type: $TYPE (image|video|audio|animated)" >&2
+    echo "Unknown type: $TYPE (image|video|audio|animated|retro|amiga)" >&2
     exit 1
     ;;
 esac
@@ -96,6 +96,16 @@ if [[ -n "$PATH_ARG" ]]; then
       fi
       fi
       ;;
+    retro)
+      echo "$PATH_ARG" > "$STATE_DIR/bg-source-path"
+      sync_bar_symlink "$PATH_ARG"
+      omarchy-shell -q "$IPC_TARGET" setSource "$TYPE" "$PATH_ARG" 2>/dev/null || true
+      ;;
+    amiga)
+      echo "$PATH_ARG" > "$STATE_DIR/bg-source-path"
+      omarchy-shell -q "$IPC_TARGET" setSource "$TYPE" "$PATH_ARG" 2>/dev/null || true
+      omarchy-shell -q io.github.avillagran.omarchy-amiga start "$PATH_ARG" background 2>/dev/null || true
+      ;;
     audio)
       # For audio, the path is the ttfx effect name
       echo "$PATH_ARG" > "$STATE_DIR/bg-source-path"
@@ -116,6 +126,9 @@ if [[ -n "$PATH_ARG" ]]; then
   if [[ "$TYPE" != "audio" ]]; then
     WRITE_STATE="$HOME/.config/omarchy/plugins/io.github.avillagran.omarchy-audio-background/bin/write_state.sh"
     [[ -x "$WRITE_STATE" ]] && "$WRITE_STATE" "running=0" >/dev/null 2>&1 || true
+  fi
+  if [[ "$TYPE" != "amiga" ]]; then
+    omarchy-shell -q io.github.avillagran.omarchy-amiga stop >/dev/null 2>&1 || true
   fi
 else
   # Just switch type, trigger refresh

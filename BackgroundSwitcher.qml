@@ -28,6 +28,8 @@ Item {
     { id: "image",    label: "IMAGES",      color: "#89b4fa" },
     { id: "video",    label: "VIDEOS",      color: "#f38ba8" },
     { id: "animated", label: "ANIMATED",    color: "#a6e3a1" },
+    { id: "retro",    label: "PROGRAMABLE", color: "#cba6f7" },
+    { id: "amiga",    label: "AMIGA",       color: "#89dceb" },
     { id: "audio",    label: "ASCII/AUDIO", color: "#fab387" }
   ]
   property int categoryIndex: 0
@@ -163,6 +165,13 @@ Item {
     const item = root.currentItems[root.selectedIndex]
     if (!item) { root.opened = false; return }
     const type = root.categories[root.categoryIndex].id
+    if (type === "amiga") {
+      Quickshell.execDetached(["bash", "-c",
+        Util.shellQuote(root.scriptPath("bin/omarchy-parallax-set-type")) + " amiga " + Util.shellQuote(item.path) + " || true"
+      ])
+      root.opened = false
+      return
+    }
     // Drop conflicting background plugin processes ONLY when leaving audio —
     // for audio targets the running wrapper reacts to the state change live,
     // and killing it would blank the desktop until the service respawns.
@@ -252,7 +261,7 @@ Item {
     id: fxDaemon
     command: ["python3", "-u", root.scriptPath("bin/fxlive.py")]
     stdinEnabled: true
-    running: root.opened
+    running: root.opened && root.categories[root.categoryIndex].id === "audio"
     onRunningChanged: {
       if (running) {
         root.fxDaemonUp = true
@@ -271,7 +280,7 @@ Item {
   Timer {
     interval: 800
     repeat: true
-    running: root.opened
+    running: root.opened && root.categories[root.categoryIndex].id === "audio"
     onTriggered: root.fxTick += 1
   }
 
@@ -382,6 +391,8 @@ Item {
   readonly property string watchDir: {
     const cat = root.categories[root.categoryIndex].id
     if (cat === "animated") return home + "/Wallpapers/Animated"
+    if (cat === "retro") return home + "/Wallpapers/Retro"
+    if (cat === "amiga") return home + "/Wallpapers/Amiga"
     if (cat === "video") return home + "/Wallpapers/Videos"
     if (cat === "image") return home + "/Wallpapers/Images"
     return home + "/.config/omarchy/animated"
