@@ -117,10 +117,36 @@ case "$CATEGORY" in
   amiga)
     dir="$HOME/Wallpapers/Amiga"
     [[ -d "$dir" ]] || exit 0
-    find -L "$dir" -maxdepth 1 -type f \( -iname '*.dms' -o -iname '*.adf' \) -print0 2>/dev/null |
-      sort -z | while IFS= read -r -d '' f; do
+    find_preview() {
+      local scene_dir="$1" candidate base ext
+      for base in thumb poster preview; do
+        for ext in png jpg jpeg gif webp apng; do
+          candidate="$scene_dir/$base.$ext"
+          [[ -f "$candidate" ]] && { printf '%s\n' "$candidate"; return; }
+        done
+      done
+      find -L "$scene_dir" -maxdepth 1 -type f \( \
+        -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o \
+        -iname '*.gif' -o -iname '*.webp' -o -iname '*.apng' \
+      \) -print -quit 2>/dev/null || true
+    }
+    emit_scene() {
+      local scene_dir="$1" f name preview
+      f=$(find -L "$scene_dir" -maxdepth 1 -type f -iname '*.dms' -print -quit 2>/dev/null || true)
+      [[ -n "$f" ]] || f=$(find -L "$scene_dir" -maxdepth 1 -type f -iname '*.adf' -print -quit 2>/dev/null || true)
+      [[ -n "$f" ]] || return 0
+      if [[ "$scene_dir" == "$dir" ]]; then
         name=$(basename "$f" | sed 's/\.[^.]*$//')
-        printf 'amiga\t%s\t%s\t%s\t%s\t%s\n' "$f" "$name" "" "" "$f"
+      else
+        name=$(basename "$scene_dir")
+      fi
+      preview=$(find_preview "$scene_dir")
+      printf 'amiga\t%s\t%s\t%s\t%s\t%s\n' "$f" "$name" "$preview" "" "$f"
+    }
+    emit_scene "$dir"
+    find -L "$dir" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null |
+      sort -z | while IFS= read -r -d '' scene_dir; do
+        emit_scene "$scene_dir"
       done
     ;;
   audio)
