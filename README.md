@@ -107,6 +107,7 @@ instead of the effect.
 ~/Wallpapers/Videos/    videos (mp4/mkv/mov/webm/avi)
 ~/Wallpapers/Animated/  gif/webp/apng/svg files AND parallax scene directories
 ~/Wallpapers/Retro/     programmable Lua scenes (+ optional same-name PNG poster)
+~/Wallpapers/Amiga/     demo folders containing .dms/.adf + thumb/poster/preview image
 ```
 
 Programmable scenes can also be placed in `~/.config/omarchy/retro/`; each `.lua`
