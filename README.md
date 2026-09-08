@@ -53,6 +53,10 @@ Installs and enables all three plugins, installs FS-UAE, and binds
 curl -fsSL https://raw.githubusercontent.com/avillagran/omarchy-animated-background/main/install.sh | bash
 ```
 
+The one-liner also downloads the sample wallpapers and the Amiga demos pack
+v0.1 into `~/Wallpapers`, then generates the local `omarchy.fs-uae` files.
+No manual archive download or extraction is required.
+
 The installer is repeatable. To review its contents before running it:
 
 ```sh
