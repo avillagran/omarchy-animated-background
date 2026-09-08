@@ -135,12 +135,12 @@ fi
 # Ensure newly installed plugin manifests are visible before invoking helpers.
 log "Refreshing Omarchy plugins"
 shell_ready=0
-for _ in {1..12}; do
+for attempt in {1..12}; do
   if omarchy-shell shell rescanPlugins >/dev/null 2>&1; then
     shell_ready=1
     break
   fi
-  log "Waiting for Omarchy shell to recover ($_/12)"
+  log "Waiting for Omarchy shell to recover ($attempt/12)"
   sleep 2
 done
 [[ "$shell_ready" == 1 ]] || fail "Omarchy shell did not recover after 24 seconds"
