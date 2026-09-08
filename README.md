@@ -46,14 +46,14 @@ and ships a background switcher with live previews.
 
 ### One-liner installer
 
-Instala y activa los tres plugins, instala FS-UAE y deja `Ctrl+Super+Space`
-bindeado al selector:
+Installs and enables all three plugins, installs FS-UAE, and binds
+`Ctrl+Super+Space` to the selector:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/avillagran/omarchy-animated-background/main/install.sh | bash
 ```
 
-El instalador es repetible. Para revisar el contenido antes de ejecutarlo:
+The installer is repeatable. To review its contents before running it:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/avillagran/omarchy-animated-background/main/install.sh
