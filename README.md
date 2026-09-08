@@ -65,7 +65,9 @@ The installer is repeatable. To review its contents before running it:
 curl -fsSL https://raw.githubusercontent.com/avillagran/omarchy-animated-background/main/install.sh
 ```
 
-To remove the three plugins and the selector takeover without deleting any
+### Uninstall
+
+Remove the three plugins and the selector takeover without deleting any
 wallpapers, Amiga disks, ROMs, or generated FS-UAE configurations:
 
 ```sh
