@@ -56,6 +56,8 @@ curl -fsSL https://raw.githubusercontent.com/avillagran/omarchy-animated-backgro
 The one-liner also downloads the sample wallpapers and the Amiga demos pack
 v0.1 into `~/Wallpapers`, then generates the local `omarchy.fs-uae` files.
 No manual archive download or extraction is required.
+It is safe to run again: already-installed plugins are reused, and the installer
+waits for the Omarchy shell to recover after a plugin refresh.
 
 The installer is repeatable. To review its contents before running it:
 
