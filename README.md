@@ -44,6 +44,21 @@ and ships a background switcher with live previews.
 
 ## Install
 
+### One-liner installer
+
+Instala y activa los tres plugins, instala FS-UAE y deja `Ctrl+Super+Space`
+bindeado al selector:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/avillagran/omarchy-animated-background/main/install.sh | bash
+```
+
+El instalador es repetible. Para revisar el contenido antes de ejecutarlo:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/avillagran/omarchy-animated-background/main/install.sh
+```
+
 ```sh
 # 1. Plugin (classic install: clone + enable)
 omarchy plugin add https://github.com/avillagran/omarchy-animated-background --enable --yes
