@@ -15,10 +15,67 @@ AMIGA_ID="io.github.avillagran.omarchy-amiga"
 log() { printf '[omarchy-backgrounds] %s\n' "$*"; }
 fail() { printf '[omarchy-backgrounds] error: %s\n' "$*" >&2; exit 1; }
 
+ACTION="${1:-install}"
+case "$ACTION" in
+  install|--install) ;;
+  --uninstall) ;;
+  -h|--help)
+    printf '%s\n' \
+      'Usage: install.sh [--uninstall]' \
+      '  (default)       Install and enable all background plugins and sample content.' \
+      '  --uninstall     Remove the plugins and selector bind, but keep all user media.'
+    exit 0
+    ;;
+  *) fail "unknown option: $ACTION" ;;
+esac
+
 command -v omarchy >/dev/null 2>&1 || fail "omarchy command not found; run this on Omarchy."
 command -v omarchy-shell >/dev/null 2>&1 || fail "omarchy-shell command not found."
-command -v curl >/dev/null 2>&1 || fail "curl is required."
-command -v unzip >/dev/null 2>&1 || fail "unzip is required."
+if [[ "$ACTION" != --uninstall ]]; then
+  command -v curl >/dev/null 2>&1 || fail "curl is required."
+  command -v unzip >/dev/null 2>&1 || fail "unzip is required."
+fi
+
+uninstall_plugin() {
+  local id="$1" manifest="$HOME/.config/omarchy/plugins/$1/manifest.json"
+  if [[ -f "$manifest" ]]; then
+    log "Removing plugin: $id"
+    omarchy plugin remove "$id" --yes || log "Could not remove $id through Omarchy; leaving it untouched"
+  else
+    log "Plugin not installed, skipping: $id"
+  fi
+}
+
+uninstall_bind() {
+  local hypr_dir="${XDG_CONFIG_HOME:-$HOME/.config}/hypr"
+  local target="$hypr_dir/hypr/parallax-backgrounds.lua"
+  local main="$hypr_dir/hyprland.lua"
+  local source="$HOME/.config/omarchy/plugins/$ANIMATED_ID/hypr/parallax-backgrounds.lua"
+
+  if [[ -f "$target" && -f "$source" ]] && cmp -s "$source" "$target"; then
+    rm -f "$target"
+    log "Removed the background selector takeover bind"
+  elif [[ -f "$target" ]]; then
+    log "Keeping modified selector bind file: $target"
+  fi
+  if [[ -f "$main" ]]; then
+    sed -i '\|require("hypr\.parallax-backgrounds")|d' "$main"
+  fi
+  hyprctl reload >/dev/null 2>&1 || true
+}
+
+if [[ "$ACTION" == --uninstall ]]; then
+  AMIGA_LAUNCHER="$HOME/.config/omarchy/plugins/$AMIGA_ID/bin/omarchy-amiga"
+  if [[ -x "$AMIGA_LAUNCHER" ]]; then
+    "$AMIGA_LAUNCHER" stop >/dev/null 2>&1 || true
+  fi
+  uninstall_bind
+  uninstall_plugin "$ANIMATED_ID"
+  uninstall_plugin "$AMIGA_ID"
+  uninstall_plugin "$AUDIO_ID"
+  log "Uninstall complete; user wallpapers and Amiga media were kept"
+  exit 0
+fi
 
 install_plugin() {
   local repo="$1" id="$2" manifest
