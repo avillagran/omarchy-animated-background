@@ -95,6 +95,45 @@ their live previews in the switcher. Without it, applying an ASCII effect
 leaves a transparent background (your previous wallpaper shows through)
 instead of the effect.
 
+### Amiga demos
+
+The **AMIGA DEMOSCENE** category runs user-provided `.adf` and `.dms` demos
+through the separate `omarchy-amiga` service. FS-UAE is the only emulator
+backend; the animated-backgrounds plugin does not bundle an emulator, ROMs, or
+demo media.
+
+Install both plugins and FS-UAE on an Arch/Omarchy system:
+
+```sh
+omarchy plugin add https://github.com/avillagran/omarchy-amiga --enable --yes
+~/.config/omarchy/plugins/io.github.avillagran.omarchy-amiga/bin/omarchy-amiga-install --install-deps
+```
+
+Put user-owned demo disks under `~/Wallpapers/Amiga/`. A demo may be a disk in
+the directory itself or in a subdirectory with an optional `thumb.*`,
+`poster.*`, or `preview.*` image. Generate the local FS-UAE sidecars before
+opening the selector:
+
+```sh
+mkdir -p ~/Wallpapers/Amiga
+unzip -o /path/to/omarchy-amiga-demos-v0.1.zip -d ~/Wallpapers/Amiga
+~/.config/omarchy/plugins/io.github.avillagran.omarchy-amiga/bin/omarchy-amiga-generate-fsuae \
+  ~/Wallpapers/Amiga --force
+```
+
+The generated `omarchy.fs-uae` files remain beside the local disks and are not
+committed to either repository. They use FS-UAE's internal AROS ROM by
+default. If a production needs a proprietary Kickstart for full compatibility,
+provide that legally in `~/Documents/FS-UAE/Kickstarts/`; never download or
+commit ROMs.
+
+Press `Enter` on a selected demo to apply it as the background. `L` changes the
+Amiga playback mode: with loop **off** (default), the current demo repeats
+continuously; with loop **on**, FS-UAE advances to the next demo when the disk
+finishes. `M` toggles FS-UAE audio. `S` toggles shuffle for Videos, Amiga, and
+ASCII/AUDIO; its state is stored in
+`~/.local/state/omarchy/background/shuffle`.
+
 ## Where your content goes
 
 > **Just want to try it?** Grab the
@@ -175,6 +214,9 @@ Layer order is the numeric prefix (0 = back). Factor `0.0` = static,
 | `Enter` | apply |
 | `Space` | toggle parallax movement |
 | `+` / `-` | parallax resolution 1–8 (default 2) |
+| `S` | shuffle Videos, Amiga, and ASCII/AUDIO |
+| `L` | Amiga: repeat current demo / advance to next demo |
+| `M` | Amiga: toggle emulator audio |
 | `Esc` | cancel (restores the previous background) |
 
 Double-clicking the desktop still opens Omarchy's regular wallpaper/theme

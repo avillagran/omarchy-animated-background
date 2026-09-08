@@ -449,7 +449,7 @@ Item {
   // The single IpcHandler for the whole plugin lives in Service.qml (target
   // = plugin id); it delegates toggle() here.
   function toggle() {
-    if (root.opened) { root.close(false) } else { root.open() }
+    if (root.opened) { root.close(true) } else { root.open() }
   }
 
   // ------------------------------------------------------------------ layer
@@ -472,7 +472,7 @@ Item {
 
       MouseArea {
         anchors.fill: parent
-        onClicked: root.close(false)
+        onClicked: root.close(true)
       }
     }
 
